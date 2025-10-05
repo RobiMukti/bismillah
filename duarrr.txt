@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Will you be mine?</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#ff6b81;
+      --muted:#b9c0d6;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(255,107,129,0.08), transparent),
+                  radial-gradient(900px 400px at 90% 90%, rgba(99,102,241,0.06), transparent),
+                  var(--bg);
+      color:white;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .card{
+      width:100%;
+      max-width:430px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:18px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+      overflow:hidden;
+      position:relative;
+      padding:26px;
+      text-align:center;
+    }
+
+    .title{
+      font-size:20px;
+      letter-spacing:0.2px;
+      margin-bottom:6px;
+      color:var(--muted);
+    }
+    .big{
+      font-size:28px;
+      font-weight:700;
+      color: #fff;
+      margin-bottom:12px;
+    }
+
+    .desc{ color: #d6dbea; font-size:14px; margin-bottom:18px; }
+
+    .photo{
+      width:120px;
+      height:120px;
+      margin: 0 auto 16px;
+      border-radius:999px;
+      overflow:hidden;
+      border:4px solid rgba(255,255,255,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    }
+    .photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    .open-btn{
+      display:inline-block;
+      background: linear-gradient(90deg,var(--accent), #ff9aa2);
+      padding:12px 22px;
+      color:white;
+      border-radius:999px;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow: 0 8px 18px rgba(255,107,129,0.12);
+      border:none;
+      cursor:pointer;
+      margin-bottom:12px;
+    }
+
+    .small{
+      font-size:13px;
+      color: #a9b3c8;
+    }
+
+    /* Overlay proposal */
+    .overlay{
+      position:fixed;
+      left:0; right:0; top:0; bottom:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(3,6,12,0.65);
+      z-index:50;
+      padding:20px;
+      backdrop-filter: blur(6px);
+      transform: scale(1.02);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .25s ease, transform .35s ease;
+    }
+    .overlay.show{
+      opacity:1;
+      pointer-events:auto;
+      transform: scale(1);
+    }
+    .panel{
+      width:100%;
+      max-width:520px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border-radius:14px;
+      padding:22px;
+      text-align:center;
+      color:white;
+      box-shadow: 0 20px 40px rgba(2,6,23,0.7);
+    }
+    .proposal-text{
+      font-size:20px;
+      margin-bottom:16px;
+      line-height:1.3;
+    }
+    .buttons{ display:flex; gap:12px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
+    .btn{
+      padding:10px 16px;
+      border-radius:10px;
+      border:none;
+      font-weight:700;
+      cursor:pointer;
+      min-width:110px;
+    }
+    .btn-yes{ background: linear-gradient(90deg,#3ee0b5,#00c2a8); color:#033029; }
+    .btn-no{ background: rgba(255,255,255,0.06); color:#fff; }
+
+    .result{
+      margin-top:14px;
+      font-size:18px;
+      color:var(--muted);
+    }
+
+    /* small controls */
+    .controls{ display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+    .link-btn{
+      background: rgba(255,255,255,0.03);
+      border-radius:8px;
+      padding:8px 12px;
+      color:#dfe8ff;
+      font-size:13px;
+      text-decoration:none;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    /* responsive */
+    @media (max-width:420px){
+      .big{ font-size:24px; }
+      .proposal-text { font-size:18px; }
+    }
+
+    /* heart burst */
+    .heart {
+      position:absolute;
+      left:50%; top:10%;
+      transform:translateX(-50%);
+      font-size:28px;
+      opacity:0.08;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    /* confetti canvas full screen */
+    #confetti-canvas{
+      position:fixed;
+      left:0; top:0;
+      width:100%; height:100%;
+      pointer-events:none;
+      z-index:60;
+    }
+
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="card" id="mainCard">
+    <div class="heart">❤️</div>
+    <div class="photo" id="photoWrap">
+      <!-- default image; user can replace by query param ?img=URL or choose locally -->
+      <img id="avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect rx='999' width='100%' height='100%' fill='%230c1220'/><text x='50%' y='50%' fill='%23cbd5e1' font-size='20' font-family='Arial' dy='.35em' text-anchor='middle'>Your Photo</text></svg>" alt="avatar">
+    </div>
+
+    <div class="title" id="fromText">Dari: <span id="fromName">Seseorang</span></div>
+    <div class="big" id="toText">Untuk: <span id="toName">Kekasihku</span></div>
+    <div class="desc" id="shortDesc">Ada sesuatu yang ingin kuberitahu — ketuk tombol di bawah untuk melihat.</div>
+
+    <button class="open-btn" id="openBtn">Buka Pesan 💌</button>
+
+    <div class="controls">
+      <label class="link-btn" id="musicLabel">
+        🎵 Pilih Musik
+        <input type="file" id="musicFile" accept="audio/*" style="display:none;">
+      </label>
+
+      <a class="link-btn" id="whatsappShare">💬 Share ke WA</a>
+
+      <a class="link-btn" id="saveAs">📥 Simpan HTML</a>
+    </div>
+
+    <div style="margin-top:12px" class="small">Tips: tambahkan `?to=Nama&from=Namamu&img=IMAGE_URL` di alamat untuk personalisasi otomatis.</div>
+  </div>
+
+  <!-- overlay -->
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <div style="font-size:14px; color:#9fb2d8; margin-bottom:6px">Hai <span id="overlayTo" style="font-weight:800"></span> 💖</div>
+      <div class="proposal-text" id="proposalText">
+        Aku tahu ini tiba-tiba, tapi aku serius. Mau nggak jadi pendampingku menjalani hari-hari ke depan?
+      </div>
+
+      <div class="buttons">
+        <button class="btn btn-yes" id="yesBtn">IYA! 💍</button>
+        <button class="btn btn-no" id="noBtn">Tunggu dulu...</button>
+      </div>
+
+      <div class="result" id="resultMsg"></div>
+    </div>
+  </div>
+
+  <audio id="bgAudio" loop></audio>
+
+  <script>
+    // Utilities to read query params
+    const params = new URLSearchParams(location.search);
+    const to = params.get('to') || '';
+    const from = params.get('from') || '';
+    const img = params.get('img') || '';
+
+    // Elements
+    const toNameEl = document.getElementById('toName');
+    const fromNameEl = document.getElementById('fromName');
+    const avatar = document.getElementById('avatar');
+    const openBtn = document.getElementById('openBtn');
+    const overlay = document.getElementById('overlay');
+    const overlayTo = document.getElementById('overlayTo');
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const resultMsg = document.getElementById('resultMsg');
+    const whatsappShare = document.getElementById('whatsappShare');
+    const bgAudio = document.getElementById('bgAudio');
+    const musicFile = document.getElementById('musicFile');
+    const saveAsBtn = document.getElementById('saveAs');
+
+    if (to) { toNameEl.textContent = decodeURIComponent(to); overlayTo.textContent = decodeURIComponent(to); }
+    if (from) { fromNameEl.textContent = decodeURIComponent(from); }
+    if (img) { avatar.src = decodeURIComponent(img); }
+
+    // Show overlay
+    openBtn.addEventListener('click', ()=> {
+      overlay.classList.add('show');
+      tryPlayAudioAuto();
+    });
+
+    noBtn.addEventListener('click', ()=> {
+      resultMsg.textContent = "Tak apa — aku tetap sayang kok. Kalau butuh waktu, aku sabar.";
+      setTimeout(()=> { overlay.classList.remove('show'); }, 1800);
+    });
+
+    yesBtn.addEventListener('click', ()=> {
+      resultMsg.textContent = "Yay! 💖 Terima kasih — aku sangat bahagia!";
+      launchConfetti();
+      // small pulse
+      yesBtn.textContent = "Accepted ✅";
+      yesBtn.disabled = true;
+      noBtn.disabled = true;
+    });
+
+    // WhatsApp share link
+    function makeShareText(){
+      const t = toNameEl.textContent || 'sayang';
+      const f = fromNameEl.textContent || 'aku';
+      return `Hai ${t}, aku udah kirim sesuatu khusus buat kamu. Buka link ini di ponselmu:\n${location.href}`;
+    }
+    whatsappShare.addEventListener('click', ()=>{
+      const text = encodeURIComponent(makeShareText());
+      const wa = `https://wa.me/?text=${text}`;
+      window.open(wa,'_blank');
+    });
+
+    // Music: user can upload local audio
+    musicFile.addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const url = URL.createObjectURL(file);
+      bgAudio.src = url;
+      bgAudio.play().catch(()=>{/* autoplay may be blocked; user can press play */});
+    });
+
+    function tryPlayAudioAuto(){
+      if(!bgAudio.src) return;
+      bgAudio.play().catch(()=>{/* ignore */});
+    }
+
+    // Save HTML: create downloadable file of current page
+    saveAsBtn.addEventListener('click', ()=>{
+      const html = '<!doctype html>\\n' + document.documentElement.outerHTML;
+      const blob = new Blob([html], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nembak.html';
+      a.click();
+      setTimeout(()=> URL.revokeObjectURL(url), 2000);
+    });
+
+    // Confetti simple canvas implementation
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let W = canvas.width = innerWidth;
+    let H = canvas.height = innerHeight;
+    window.addEventListener('resize', ()=> { W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
+
+    function rand(min,max){ return Math.random()*(max-min)+min; }
+
+    function launchConfetti(){
+      const confetti = [];
+      const colors = ['#ff6b81','#ff9aa2','#ffd166','#06d6a0','#3ee0b5','#9b5de5'];
+      for(let i=0;i<120;i++){
+        confetti.push({
+          x: W * Math.random(),
+          y: H * Math.random() - H,
+          r: rand(6,12),
+          d: rand(4,10),
+          color: colors[Math.floor(Math.random()*colors.length)],
+          tilt: rand(-10,10),
+          tiltSpeed: rand(0.05,0.12),
+          vy: rand(2,6)
+        });
+      }
+      let life = 0;
+      function run(){
+        ctx.clearRect(0,0,W,H);
+        for(let i=0;i<confetti.length;i++){
+          const p = confetti[i];
+          p.tilt += p.tiltSpeed;
+          p.y += p.vy;
+          p.x += Math.sin(p.tilt) * 2;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.tilt * Math.PI/180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.6);
+          ctx.restore();
+        }
+        life++;
+        if(life < 300){
+          requestAnimationFrame(run);
+        } else {
+          ctx.clearRect(0,0,W,H);
+        }
+      }
+      run();
+    }
+
+    // Keyboard: pressing 'p' opens overlay (for testing)
+    document.addEventListener('keydown', (e)=>{
+      if(e.key.toLowerCase() === 'p') overlay.classList.toggle('show');
+    });
+
+    // Friendly hint: if page opened in android webview from WA, query param might be truncated.
+    // Done.
+  </script>
+</body>
+</html>
